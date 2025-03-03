@@ -1,5 +1,6 @@
 # Load required packages
 library(lme4)
+library(merTools)
 
 # Set seed for reproducibility
 set.seed(123)
@@ -43,12 +44,13 @@ model <- glmer(response ~ var1 + var2 + (1 | grid1),
 
 
 # Use bootMER for uncertainty estimation
-boot_predictions <- bootMer(
-  model, 
-  FUN = function(fit) predict(fit, newdata = data), 
-  nsim = 10, 
-  seed = 42
-)
+boot_predictions <- bootMer(model, 
+                            FUN = function(fit) predict(
+                              fit, newdata = data, re.form = NA, allow.new.levels = TRUE
+                              ), 
+                            nsim = 10, 
+                            seed = 42, use.u = FALSE, type = "parametric", 
+                            parallel = "no", ncpus = par_cores)
 
 # Combine all bootstrap predictions
 boot_all_predictions <- boot_predictions$t[, 1] # 1st sim
@@ -65,7 +67,8 @@ predict_results <- predictInterval(
   which = "fixed",
   level = 0.48,
   type = "linear.prediction",
-  n.sims = 1000
+  n.sims = 1000,
+  include.resid.var = FALSE
 )
 
 # Calculate global mean, LCI, and UCI for predictInterval
@@ -75,3 +78,6 @@ predict_se <- predict_results$fit - predict_results$lwr
 # Print the comparison
 cat(sprintf("Mean: bootMer = %.3f, predictInterval = %.3f\n", boot_global_mean, predict_mean[1]))
 cat(sprintf("se: bootMer = %.3f, predictInterval = %.3f\n", boot_global_se, predict_se[1]))
+
+save(boot_predictions, boot_global_mean, boot_global_se, predict_results, predict_mean, predict_se,
+     file = "sim_reprex_modelout.RData")

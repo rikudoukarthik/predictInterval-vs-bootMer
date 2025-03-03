@@ -44,7 +44,8 @@ bootmer_se <- sd(na.omit(pred_bootMer$t[,1]))
 
 # tictoc::tic("predictInterval")
 model_predint = predictInterval(model, newdata = data_to_pred, which = "fixed",
-                                level = 0.48, type = "linear.prediction")
+                                level = 0.48, type = "linear.prediction",
+                                include.resid.var = FALSE)
 predint_mean <- model_predint$fit
 predint_se <- model_predint$fit - model_predint$lwr
 # tictoc::toc()
@@ -53,3 +54,6 @@ predint_se <- model_predint$fit - model_predint$lwr
 # print comparisons
 paste("Means: bootMer =", bootmer_mean, ", predictInterval =", predint_mean[1])
 paste("SEs: bootMer =", bootmer_se, ", predictInterval =", predint_se[1])
+
+save(pred_bootMer, bootmer_mean, bootmer_se, model_predint, predint_mean, predint_se,
+     file = "soib_reprex_modelout.RData")
